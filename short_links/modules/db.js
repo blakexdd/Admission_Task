@@ -159,7 +159,7 @@ function handle_short_id_get(req, res)
             /* getting shortenedURLs collection where urls locate */
             const shortenedURLs = db.collection('shortenedURLs');
 
-            shortenedURLs.findOneAndUpdate({ original_url: doc.original_url },
+            shortenedURLs.findOneAndUpdate({ short_id: doc.short_id },
                 {$inc : {counter : 1}},        {
                     /* setting additional parameters */
                     returnOriginal: false,
