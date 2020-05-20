@@ -33,7 +33,7 @@ MongoClient.connect(databaseUrl, { useNewUrlParser: true })
  * Returns:
  *    - status of operation
 */
-function make_short_urls(db, url)
+function make_short_urls(db, url, user_id)
 {
     /* getting shortenedURLs collection where urls locate */
     const shortenedURLs = db.collection('shortenedURLs');
@@ -42,11 +42,12 @@ function make_short_urls(db, url)
     *    1. Found - update url
     *    2. Not found - update url
     */
-    return shortenedURLs.findOneAndUpdate({ original_url: url },
+    return shortenedURLs.findOneAndUpdate({ original_url: url, user_id : user_id},
         {
             $setOnInsert: {
                 original_url: url, // original url
                 short_id: nanoid.nanoid(7), // short id of original,
+                user_id: user_id // user id
             },
         },
         {
@@ -99,32 +100,34 @@ function handle_url_post(req, res)
             return res.status(404).send({error: 'Address not found'});
         }
 
+        /* incrementing number of users converts  */
+        number_of_users_converts++;
+
+        /* if we spotted first convert, creting user */
+        if (number_of_users_converts === 1)
+            user = new users.User();
+
+
         /* database instance to further search in it for links */
         const { db } = req.app.locals;
 
         /* getting shorten links */
-        make_short_urls(db, originalUrl.href)
+        make_short_urls(db, originalUrl.href, user.id)
             .then(result => {
                 /* contains original url and short id of url */
                 const doc = result.value;
 
-                // /* incrementing number of users converts  */
-                // number_of_users_converts++;
-                //
-                // /* if we spotted first convert, creting user */
-                // if (number_of_users_converts === 1)
-                //     user = new users.User();
-                //
-                // /* adding links to users links dict */
-                // user.add_link(doc.original_url,  'http://localhost:' + process.env.PORT + '/' + doc.short_id);
-                //
-                // /* printing links to console */
-                // user.print_links();
+                /* adding links to users links dict */
+                user.add_link(doc.original_url,  'http://localhost:' + process.env.PORT + '/' + doc.short_id);
+
+                /* printing links to console */
+                user.print_links();
 
                 /* sending original url and short id of url */
                 res.json({
                     original_url: doc.original_url,
                     short_id: doc.short_id,
+                    user_id: user.id
                 });
             })
             .catch(console.error);
