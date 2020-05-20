@@ -7,7 +7,7 @@
 
 /* setting requirements */
 const { MongoClient } = require('mongodb');
-const users = require('../user');
+const users = require('./user');
 const app = require('../server');
 const dns = require('dns');
 const nanoid = require('nanoid');
