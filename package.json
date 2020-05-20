@@ -7,7 +7,7 @@
     "email": "blakexxxd@gmail.com"
   },
   "scripts": {
-    "start": "nodemon short_links/server.js"
+    "start": "npx nodemon short_links/server.js"
   },
   "repository": {
     "type": "git",
