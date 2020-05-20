@@ -41,4 +41,5 @@ const server = app.listen(app.get('port'), () => {
 	console.log(`Running at PORT ${server.address().port}`);
 });
 
+/* exporting app */
 exports.app = app;

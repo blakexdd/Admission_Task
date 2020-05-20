@@ -26,8 +26,15 @@ MongoClient.connect(databaseUrl, { useNewUrlParser: true })
     })
     .catch(() => console.error('Failed to connect to the database'));
 
-
-const shortenURL = (db, url) => {
+/* Converting original url to short url
+ * Arguments:
+ *    - database with urls and url to convert
+ *        db, url
+ * Returns:
+ *    - status of operation
+*/
+function make_short_urls(db, url)
+{
     /* getting shortenedURLs collection where urls locate */
     const shortenedURLs = db.collection('shortenedURLs');
 
@@ -39,7 +46,7 @@ const shortenURL = (db, url) => {
         {
             $setOnInsert: {
                 original_url: url, // original url
-                short_id: nanoid.nanoid(7), // short id of original
+                short_id: nanoid.nanoid(7), // short id of original,
             },
         },
         {
@@ -48,11 +55,29 @@ const shortenURL = (db, url) => {
             upsert: true,
         }
     );
-};
+}
 
-const checkIfShortIdExists = (db, code) => db.collection('shortenedURLs')
-    .findOne({ short_id: code });
+/* Checking if short id is in urls database
+ * Arguments:
+ *    - database with urls and code of short url
+ *        db, url
+ * Returns:
+ *    - 1. True - short url in db
+ *      2. False - short url not in db
+*/
+function checkIfShortIdExists(db, code)
+{
+    /* finding url in db */
+    return db.collection('shortenedURLs').findOne({ short_id: code });
+}
 
+/* Implementing post request
+ * Arguments:
+ *    - request and response
+ *        req, res
+ * Returns:
+ *    - None
+*/
 function handle_url_post(req, res)
 {
     /* declaring originalURl variable for further assignments */
@@ -72,29 +97,29 @@ function handle_url_post(req, res)
         if (err) {
             /* returning error indicating user entered not working url */
             return res.status(404).send({error: 'Address not found'});
-        };
+        }
 
         /* database instance to further search in it for links */
         const { db } = req.app.locals;
 
         /* getting shorten links */
-        shortenURL(db, originalUrl.href)
+        make_short_urls(db, originalUrl.href)
             .then(result => {
                 /* contains original url and short id of url */
                 const doc = result.value;
 
-                /* incrementing number of users converts  */
-                number_of_users_converts++;
-
-                /* if we spotted first convert, creting user */
-                if (number_of_users_converts === 1)
-                    user = new users.User();
-
-                /* adding links to users links dict */
-                user.add_link(doc.original_url,  'http://localhost:' + process.env.PORT + '/' + doc.short_id);
-
-                /* printing links to console */
-                user.print_links();
+                // /* incrementing number of users converts  */
+                // number_of_users_converts++;
+                //
+                // /* if we spotted first convert, creting user */
+                // if (number_of_users_converts === 1)
+                //     user = new users.User();
+                //
+                // /* adding links to users links dict */
+                // user.add_link(doc.original_url,  'http://localhost:' + process.env.PORT + '/' + doc.short_id);
+                //
+                // /* printing links to console */
+                // user.print_links();
 
                 /* sending original url and short id of url */
                 res.json({
@@ -106,6 +131,13 @@ function handle_url_post(req, res)
     });
 }
 
+/* Implementing get request
+ * Arguments:
+ *    - request and response
+ *        req, res
+ * Returns:
+ *    - None
+*/
 function handle_short_id_get(req, res)
 {
     /* short id of current url */
@@ -120,6 +152,16 @@ function handle_short_id_get(req, res)
             if (doc === null)
                 /* sending user response of invalid link */
                 return res.send('Not valid URL');
+
+            /* getting shortenedURLs collection where urls locate */
+            const shortenedURLs = db.collection('shortenedURLs');
+
+            shortenedURLs.findOneAndUpdate({ original_url: doc.original_url },
+                {$inc : {counter : 1}},        {
+                    /* setting additional parameters */
+                    returnOriginal: false,
+                    upsert: true,
+                });
 
             /* redirecting user to original page */
             res.redirect(doc.original_url);
